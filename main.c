@@ -96,13 +96,13 @@ int main()
     GPIOInit();
 
     uint16_t chIndex;
-    uint16_t pwmSum = 0;
+    uint16_t mappedValueSum = 0;
     uint16_t mappedValue = 0;
 
     multicore_launch_core1(core1_entry);
 
     while (1) {
-        pwmSum = 0;
+        mappedValueSum = 0;
 
         for(chIndex = 0; chIndex < 4; chIndex++)
         {
@@ -114,9 +114,9 @@ int main()
         {
             mappedValue = mapChValue(chResult[chIndex], 0, 2047, 4095, chReverse[chIndex]);
             ppmValues[chIndex * 2 + 1] = mappedValue - MS05;
-            pwmSum += mappedValue;
+            mappedValueSum += mappedValue;
         }
 
-        ppmValues[PPM_NUM - 1] = MS20 - pwmSum;
+        ppmValues[PPM_NUM - 1] = MS20 - mappedValueSum;
     }
 }
