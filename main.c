@@ -19,8 +19,8 @@
 #define PPM_NUM (CHANNEL_NUM * 2 + 2)   // PPM信号变化次数
 
 uint16_t volatile chResult[CHANNEL_NUM] = { 2048, 2048, 2048, 2048, 0, 0, 0, 0 };   // ADC输出的值
-uint16_t volatile PPMValues[PPM_NUM] = { MS05, 500, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 8000 };
-uint16_t volatile PPM_Index = 0;
+uint16_t volatile ppmValues[PPM_NUM] = { MS05, 500, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 8000 };
+uint16_t volatile ppmIndex = 0;
 uint8_t volatile ppmLevel = 0;
 uint8_t volatile chReverse[CHANNEL_NUM] = { 0, 1, 1, 0, 0, 0, 0, 0 };  // 用来控制反向，电脑模拟器软件有反向功能，可不使用
  
@@ -69,12 +69,12 @@ int mapChValue(int val, int lower, int middle, int upper, int reverse)
 int64_t alarmCallback(alarm_id_t id, void *user_data)
 {
     gpio_put(PPM_PIN, ppmLevel);
-    add_alarm_in_us(PPMValues[PPM_Index], alarmCallback, NULL, false);
+    add_alarm_in_us(ppmValues[ppmIndex], alarmCallback, NULL, false);
     ppmLevel = !ppmLevel;
-    ++PPM_Index;
-    if (PPM_Index == PPM_NUM)
+    ++ppmIndex;
+    if (ppmIndex == PPM_NUM)
     {
-        PPM_Index = 0;
+        ppmIndex = 0;
     }
 
     return 0;
@@ -83,9 +83,9 @@ int64_t alarmCallback(alarm_id_t id, void *user_data)
 void core1_entry()
 {
     gpio_put(PPM_PIN, ppmLevel);
-    add_alarm_in_us(PPMValues[PPM_Index], alarmCallback, NULL, false);
+    add_alarm_in_us(ppmValues[ppmIndex], alarmCallback, NULL, false);
     ppmLevel = !ppmLevel;
-    ++PPM_Index;
+    ++ppmIndex;
 }
 
 
@@ -96,13 +96,13 @@ int main()
     GPIOInit();
 
     uint16_t chIndex;
-    uint16_t PWM_Sum = 0;
+    uint16_t pwmSum = 0;
     uint16_t mappedValue = 0;
 
     multicore_launch_core1(core1_entry);
 
     while (1) {
-        PWM_Sum = 0;
+        pwmSum = 0;
 
         for(chIndex = 0; chIndex < 4; chIndex++)
         {
@@ -113,10 +113,10 @@ int main()
         for(chIndex = 0; chIndex < CHANNEL_NUM; chIndex++)
         {
             mappedValue = mapChValue(chResult[chIndex], 0, 2047, 4095, chReverse[chIndex]);
-            PPMValues[chIndex * 2 + 1] = mappedValue - MS05;
-            PWM_Sum += mappedValue;
+            ppmValues[chIndex * 2 + 1] = mappedValue - MS05;
+            pwmSum += mappedValue;
         }
 
-        PPMValues[PPM_NUM - 1] = MS20 - PWM_Sum;
+        ppmValues[PPM_NUM - 1] = MS20 - pwmSum;
     }
 }
