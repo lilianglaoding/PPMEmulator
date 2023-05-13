@@ -18,6 +18,14 @@
 #define MS05    (500)   /* 0.5ms */     // PPM每个通道时间间隔
 #define PPM_NUM (CHANNEL_NUM * 2 + 2)   // PPM信号变化次数
 
+#define ADC_VALUE_MAX    4095
+#define ADC_VALUE_MIN    0
+#define ADC_VALUE_MID    2047
+
+#define MAPPED_VALUE_MAX 2000
+#define MAPPED_VALUE_MIN 1000
+#define MAPPED_VALUE_MID 1500
+
 uint16_t volatile chResult[CHANNEL_NUM] = { 2048, 2048, 2048, 2048, 0, 0, 0, 0 };   // ADC输出的值
 uint16_t volatile ppmValues[PPM_NUM] = { MS05, 500, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 1000, MS05, 8000 };
 uint16_t volatile ppmIndex = 0;
@@ -56,11 +64,11 @@ int mapChValue(int val, int lower, int middle, int upper, int reverse)
         
     if ( val < middle )
     {
-        val = (int)map(val, lower, middle, 1000, 1500);
+        val = (int)map(val, lower, middle, MAPPED_VALUE_MIN, MAPPED_VALUE_MID);
     }
     else
     {
-        val = (int)map(val, middle, upper, 1500, 2000);
+        val = (int)map(val, middle, upper, MAPPED_VALUE_MID, MAPPED_VALUE_MAX);
     }
     
     return ( reverse ? 3000 - val : val );
@@ -112,7 +120,7 @@ int main()
 
         for(chIndex = 0; chIndex < CHANNEL_NUM; chIndex++)
         {
-            mappedValue = mapChValue(chResult[chIndex], 0, 2047, 4095, chReverse[chIndex]);
+            mappedValue = mapChValue(chResult[chIndex], ADC_VALUE_MIN, ADC_VALUE_MID, ADC_VALUE_MAX, chReverse[chIndex]);
             ppmValues[chIndex * 2 + 1] = mappedValue - MS05;
             mappedValueSum += mappedValue;
         }
